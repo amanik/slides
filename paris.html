@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AI Studio x WMS Onsite — Paris March 16–20</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F6F3;
+    --card-shadow: 2px 3px 6px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --navy: #1B2A4A;
+    --radius: 10px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: #333;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--navy);
+    color: white;
+    padding: 16px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .header h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+  .header .sub { font-size: 11px; opacity: 0.7; margin-top: 4px; line-height: 1.4; }
+
+  /* ===== DAY TABS ===== */
+  .day-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    position: sticky; top: 0; z-index: 99;
+    padding: 0 12px;
+  }
+  .day-tabs::-webkit-scrollbar { display: none; }
+
+  .day-tab {
+    flex: 0 0 auto;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    user-select: none;
+  }
+  .day-tab.active {
+    color: var(--navy);
+    border-bottom-color: var(--navy);
+  }
+  .day-tab .theme { font-size: 10px; font-weight: 400; opacity: 0.7; display: block; margin-top: 2px; }
+
+  /* ===== TIMELINE ===== */
+  .day-view { display: none; padding: 16px; }
+  .day-view.active { display: block; }
+
+  .time-block { margin-bottom: 20px; }
+  .time-label {
+    font-size: 12px; font-weight: 700; color: #999;
+    padding: 4px 0 8px; text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e8e8e8;
+    margin-bottom: 10px;
+  }
+
+  .card {
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+  }
+  .card:active { transform: scale(0.98); }
+
+  .card .title { font-weight: 700; font-size: 14px; margin-bottom: 4px; line-height: 1.3; }
+  .card .desc { color: #555; font-size: 12px; line-height: 1.5; }
+  .card .meta-row {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 10px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .tag-format { background: rgba(0,0,0,0.06); color: #555; }
+  .tag-driver { background: rgba(45,90,160,0.1); color: #2D5AA0; }
+
+  /* Card colors */
+  .c-meal     { background: #E3ECFA; }
+  .c-keynote  { background: #C8E6C9; }
+  .c-session  { background: #FFF9C4; }
+  .c-breakout { background: #BBDEFB; }
+  .c-parallel { background: #FFE0B2; }
+  .c-fun      { background: #E1BEE7; }
+  .c-social   { background: #FFCCBC; }
+  .c-buffer   { background: #EFEFEF; }
+  .c-buffer .title { color: #aaa; font-weight: 400; font-style: italic; }
+
+  /* ===== RSVP BUTTONS ===== */
+  .rsvp-row {
+    display: flex; gap: 8px; margin-top: 10px;
+  }
+  .rsvp-btn {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0,0,0,0.06);
+    color: #666;
+  }
+  .rsvp-btn:active { transform: scale(0.96); }
+  .rsvp-btn.going.selected { background: #2E7D32; color: white; }
+  .rsvp-btn.maybe.selected { background: #F57F17; color: white; }
+  .rsvp-btn.skip.selected { background: #C62828; color: white; }
+
+  /* ===== COMMENT SECTION ===== */
+  .comments-section {
+    display: none;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0,0,0,0.1);
+  }
+  .comments-section.open { display: block; }
+
+  .comment-list { margin-bottom: 8px; }
+  .comment-item {
+    background: rgba(255,255,255,0.7);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .comment-item .comment-author {
+    font-weight: 700; font-size: 11px; color: var(--navy);
+    margin-bottom: 2px;
+  }
+  .comment-item .comment-time {
+    font-size: 9px; color: #999; margin-left: 6px; font-weight: 400;
+  }
+  .comment-item .comment-text { color: #444; }
+  .comment-item .comment-delete {
+    float: right; cursor: pointer; font-size: 14px; color: #ccc;
+    line-height: 1; padding: 0 2px;
+  }
+  .comment-item .comment-delete:hover { color: #e53935; }
+
+  .comment-input-row {
+    display: flex; gap: 6px;
+  }
+  .comment-input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    background: white;
+  }
+  .comment-input:focus { border-color: var(--navy); }
+  .comment-send {
+    padding: 8px 14px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .comment-send:active { opacity: 0.8; }
+
+  .comment-toggle {
+    font-size: 11px; color: #888; cursor: pointer;
+    padding: 4px 0; user-select: none;
+  }
+  .comment-toggle:hover { color: var(--navy); }
+  .comment-count {
+    background: var(--navy); color: white;
+    font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px;
+    margin-left: 4px;
+  }
+
+  /* ===== NAME SETUP ===== */
+  .name-banner {
+    background: #FFF3E0;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .name-banner input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+  }
+  .name-banner button {
+    padding: 8px 16px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ===== LEGEND ===== */
+  .legend {
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: #777;
+    border-top: 1px solid #e5e5e5;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 4px;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.08);
+  }
+
+  /* ===== DESKTOP GRID VIEW ===== */
+  @media (min-width: 900px) {
+    .header { padding: 20px 32px; }
+    .header h1 { font-size: 22px; }
+    .day-tabs { padding: 0 24px; }
+    .day-view { padding: 24px 32px; max-width: 800px; margin: 0 auto; }
+    .card { cursor: pointer; }
+    .card:hover { transform: translateY(-2px); box-shadow: 3px 5px 14px rgba(0,0,0,0.12); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AI Studio x WMS Onsite — Paris</h1>
+  <div class="sub">March 16–20, 2026 · 83-85 Av. de la Grande Armee, 5th Floor · 23 attendees</div>
+</div>
+
+<div class="name-banner" id="nameBanner">
+  <span>Your name:</span>
+  <input type="text" id="nameInput" placeholder="e.g. Aman" />
+  <button onclick="saveName()">Save</button>
+</div>
+
+<div class="day-tabs" id="dayTabs"></div>
+
+<div id="dayViews"></div>
+
+<div class="legend">
+  <span><span class="legend-dot" style="background:#FFF9C4;"></span>Session</span>
+  <span><span class="legend-dot" style="background:#C8E6C9;"></span>Plenary</span>
+  <span><span class="legend-dot" style="background:#BBDEFB;"></span>Breakout</span>
+  <span><span class="legend-dot" style="background:#FFE0B2;"></span>Parallel</span>
+  <span><span class="legend-dot" style="background:#E1BEE7;"></span>Fun</span>
+  <span><span class="legend-dot" style="background:#FFCCBC;"></span>Social</span>
+  <span><span class="legend-dot" style="background:#E3ECFA;"></span>Meals</span>
+</div>
+
+<script>
+/* ====== DATA ====== */
+const DAYS = [
+  {
+    label: "Mon 16", theme: "Context & Foundations",
+    slots: [
+      { time: "9:00", items: [
+        { id: "m1-bk", type: "c-meal", title: "Breakfast", desc: "Arrivals throughout AM" }
+      ]},
+      { time: "9:30", items: [
+        { id: "m1-arr", type: "c-buffer", title: "Arrivals & settling in" }
+      ]},
+      { time: "10:00", items: [
+        { id: "m1-welcome", type: "c-keynote", title: "Welcome & Week Overview", desc: "Kick-off, intros, week goals", format: "Presentation", driver: "Matt" }
+      ]},
+      { time: "11:00", items: [
+        { id: "m1-graph", type: "c-session", title: "Supply Chain Graph + Process Maps", desc: "Building operators & solverators using graph-based models", format: "Presentation", driver: "TBC" }
+      ]},
+      { time: "12:30", items: [
+        { id: "m1-lunch", type: "c-meal", title: "Lunch" }
+      ]},
+      { time: "14:00", items: [
+        { id: "m1-breakout", type: "c-breakout", title: "3 Breakout Tracks", desc: "A) Unified Ontology — rules & validation (Koussaila)\nB) Universal Graph Model — reasoning, LLM embeddings\nC) Temporal Graph Model — graph evolution", format: "Working Session" }
+      ]},
+      { time: "15:30", items: [
+        { id: "m1-som", type: "c-session", title: "How We Built SOM", desc: "Operator team & model training approach", format: "Presentation", driver: "TBC" }
+      ]},
+      { time: "16:30", items: [
+        { id: "m1-buf", type: "c-buffer", title: "Buffer" }
+      ]},
+      { time: "17:00", items: [
+        { id: "m1-ice", type: "c-fun", title: "2 Truths & 1 Lie", desc: "2 true facts + 1 lie — team guesses the lie. Conversation starter before dinner.", format: "Icebreaker", driver: "Matthias" }
+      ]},
+      { time: "18:00", items: [
+        { id: "m1-apero", type: "c-social", title: "Apero" }
+      ]},
+      { time: "19:00", items: [
+        { id: "m1-dinner", type: "c-social", title: "Dinner", desc: "Self-organized" }
+      ]}
+    ]
+  },
+  {
+    label: "Tue 17", theme: "Hands-On & Feedback",
+    slots: [
+      { time: "9:00", items: [
+        { id: "t1-bk", type: "c-meal", title: "Breakfast" }
+      ]},
+      { time: "9:30", items: [
+        { id: "t1-agent", type: "c-session", title: "Agent Testing — 2 Groups", desc: "G1: Venkat, Simon + AI Studio\nG2: Trung, Rhys + AI Studio\nGenerate feedback for pref alignment", format: "Working Session", driver: "Venkat (G1) | Trung (G2)" }
+      ]},
+      { time: "10:00", items: [
+        { id: "t1-share", type: "c-keynote", title: "Share Findings", desc: "Both groups present feedback (30 min)", format: "Presentation", driver: "Venkat (G1) | Trung (G2)" }
+      ]},
+      { time: "11:00", items: [
+        { id: "t1-parallel", type: "c-parallel", title: "PARALLEL TRACK", desc: "A) Ways of Working Automation (90 min) — target picture, team routines, knowledge agents, automation use cases (Matthias)\n\nB) Others: Buffer / Open", format: "Working Session" }
+      ]},
+      { time: "12:30", items: [
+        { id: "t1-lunch", type: "c-meal", title: "Lunch" }
+      ]},
+      { time: "14:00", items: [
+        { id: "t1-wtm", type: "c-session", title: "WTM Deep Dive", desc: "Demand modeling, use cases, 'Similar demand' validation, presentation to warehouse managers", format: "Presentation", driver: "Patrick Heinze" }
+      ]},
+      { time: "15:30", items: [
+        { id: "t1-swap", type: "c-session", title: "Resource Swap Workshop", desc: "Modeling & simulation — conditions, constraints, customer reality", format: "Working Session", driver: "Nour Assy" }
+      ]},
+      { time: "16:30", items: [
+        { id: "t1-buf", type: "c-buffer", title: "Buffer" }
+      ]},
+      { time: "17:00", items: [
+        { id: "t1-ice", type: "c-fun", title: "Build the Worst AI Product", desc: "Teams of 3-4 pitch a terrible agent idea with a straight face", format: "Icebreaker", driver: "Matthias" }
+      ]},
+      { time: "18:00", items: [
+        { id: "t1-apero", type: "c-social", title: "Apero" }
+      ]},
+      { time: "19:00", items: [
+        { id: "t1-dinner", type: "c-social", title: "Dinner", desc: "Self-organized" }
+      ]}
+    ]
+  },
+  {
+    label: "Wed 18", theme: "ICON & Use Cases",
+    slots: [
+      { time: "9:00", items: [
+        { id: "w1-bk", type: "c-meal", title: "Breakfast" }
+      ]},
+      { time: "9:30", items: [
+        { id: "w1-icon", type: "c-session", title: "ICON Demo Prep", desc: "Venkat: context & constraints. What is the demo storyline? How do we present the agent?", format: "Working Session", driver: "Venkat" }
+      ]},
+      { time: "10:00", items: [
+        { id: "w1-pitch", type: "c-breakout", title: "ICON: Group Pitches", desc: "Split into groups, build a pitch for the agent demo. Regroup, present, next steps.", format: "Working Session", driver: "Venkat / Trung" }
+      ]},
+      { time: "11:00", items: [
+        { id: "w1-parallel", type: "c-parallel", title: "PARALLEL TRACK", desc: "A) ICON pitches continue (Venkat / Trung)\n\nB) WMS v2 Agentic API — Bob + Engineering (Bob)", format: "Working Session" }
+      ]},
+      { time: "12:30", items: [
+        { id: "w1-lunch", type: "c-meal", title: "Lunch" }
+      ]},
+      { time: "14:00", items: [
+        { id: "w1-usecase", type: "c-session", title: "Use Case Exploration", desc: "1. Intro 1-3 candidates\n2. Group picks top 2\n3. Split into 2 groups\nVenkat vs Trung (opposite)\nRhys vs Simon (opposite)", format: "Working Session", driver: "Venkat / Trung" }
+      ]},
+      { time: "15:30", items: [
+        { id: "w1-deep", type: "c-breakout", title: "Use Case Deep Work", desc: "4. User flow capture\n5. API mapping\n6. Build mock agent\nVenkat vs Trung (opposite)\nRhys vs Simon (opposite)", format: "Working Session", driver: "Venkat / Trung" }
+      ]},
+      { time: "16:30", items: [
+        { id: "w1-readout", type: "c-keynote", title: "Use Case Readout", desc: "Groups present user flows, API maps & mock agents. Discuss feasibility & prioritize.", format: "Presentation", driver: "Venkat / Trung" }
+      ]},
+      { time: "17:00", items: [
+        { id: "w1-buf", type: "c-buffer", title: "Buffer" }
+      ]},
+      { time: "18:00", items: [
+        { id: "w1-apero", type: "c-social", title: "Apero" }
+      ]},
+      { time: "19:00", items: [
+        { id: "w1-dinner", type: "c-social", title: "Dinner", desc: "Self-organized" }
+      ]}
+    ]
+  },
+  {
+    label: "Thu 19", theme: "Strategy & Alignment",
+    slots: [
+      { time: "9:00", items: [
+        { id: "th1-bk", type: "c-meal", title: "Breakfast" }
+      ]},
+      { time: "9:30", items: [
+        { id: "th1-prod", type: "c-session", title: "Productization Strategy", desc: "Where do we go from here with productizing Short Order Management agent?", format: "Working Session", driver: "Trung / Venkat" }
+      ]},
+      { time: "10:00", items: [
+        { id: "th1-buf1", type: "c-buffer", title: "Buffer" }
+      ]},
+      { time: "11:00", items: [
+        { id: "th1-roadmap", type: "c-session", title: "Post-ICON Roadmap", desc: "Next iteration scope. Agents beyond Short Orders.", format: "Brainstorm", driver: "Venkat" }
+      ]},
+      { time: "12:30", items: [
+        { id: "th1-lunch", type: "c-meal", title: "Lunch" }
+      ]},
+      { time: "14:00", items: [
+        { id: "th1-retro", type: "c-session", title: "Process Retro & Acceleration", desc: "What worked? What to improve? How do we move faster?", format: "Working Session", driver: "Aman" }
+      ]},
+      { time: "15:30", items: [
+        { id: "th1-buf2", type: "c-buffer", title: "Buffer" }
+      ]},
+      { time: "16:30", items: [
+        { id: "th1-wrap", type: "c-keynote", title: "Wrap-Up & Next Steps", desc: "Key decisions, owners, deadlines", format: "Working Session" }
+      ]},
+      { time: "17:00", items: [
+        { id: "th1-buf3", type: "c-buffer", title: "Buffer" }
+      ]},
+      { time: "18:00", items: [
+        { id: "th1-apero", type: "c-social", title: "Apero" }
+      ]},
+      { time: "19:00", items: [
+        { id: "th1-dinner", type: "c-social", title: "Dinner", desc: "Self-organized" }
+      ]}
+    ]
+  },
+  {
+    label: "Fri 20", theme: "Travel Day",
+    slots: [
+      { time: "9:00", items: [
+        { id: "f1-open", type: "c-meal", title: "Office open", desc: "Late departures" }
+      ]},
+      { time: "9:30", items: [
+        { id: "f1-bye", type: "c-social", title: "Safe travels!" }
+      ]}
+    ]
+  }
+];
+
+/* ====== STATE (localStorage) ====== */
+const LS_PREFIX = "paris26_";
+function lsGet(key, fallback) {
+  try { const v = localStorage.getItem(LS_PREFIX + key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function lsSet(key, val) {
+  localStorage.setItem(LS_PREFIX + key, JSON.stringify(val));
+}
+
+let userName = lsGet("name", "");
+let rsvps = lsGet("rsvps", {});       // { itemId: "going"|"maybe"|"skip" }
+let comments = lsGet("comments", {}); // { itemId: [ {author, text, time} ] }
+
+/* ====== NAME ====== */
+function saveName() {
+  const v = document.getElementById("nameInput").value.trim();
+  if (!v) return;
+  userName = v;
+  lsSet("name", userName);
+  document.getElementById("nameBanner").style.display = "none";
+}
+if (userName) {
+  document.getElementById("nameBanner").style.display = "none";
+}
+document.getElementById("nameInput").value = userName;
+
+/* ====== RENDER ====== */
+const tabsEl = document.getElementById("dayTabs");
+const viewsEl = document.getElementById("dayViews");
+
+function renderAll() {
+  tabsEl.innerHTML = "";
+  viewsEl.innerHTML = "";
+
+  DAYS.forEach((day, di) => {
+    // Tab
+    const tab = document.createElement("div");
+    tab.className = "day-tab" + (di === 0 ? " active" : "");
+    tab.innerHTML = `${day.label}<span class="theme">${day.theme}</span>`;
+    tab.onclick = () => switchDay(di);
+    tab.dataset.day = di;
+    tabsEl.appendChild(tab);
+
+    // View
+    const view = document.createElement("div");
+    view.className = "day-view" + (di === 0 ? " active" : "");
+    view.dataset.day = di;
+
+    day.slots.forEach(slot => {
+      const block = document.createElement("div");
+      block.className = "time-block";
+      block.innerHTML = `<div class="time-label">${slot.time}</div>`;
+
+      slot.items.forEach(item => {
+        block.appendChild(renderCard(item));
+      });
+
+      view.appendChild(block);
+    });
+
+    viewsEl.appendChild(view);
+  });
+}
+
+function renderCard(item) {
+  const card = document.createElement("div");
+  card.className = `card ${item.type}`;
+  card.id = `card-${item.id}`;
+
+  const isMeal = item.type === "c-meal" || item.type === "c-buffer" || item.type === "c-social";
+  const isSession = !isMeal;
+
+  let html = `<div class="title">${item.title}</div>`;
+  if (item.desc) {
+    html += `<div class="desc">${item.desc.replace(/\n/g, "<br>")}</div>`;
+  }
+
+  // Meta tags
+  if (item.format || item.driver) {
+    html += `<div class="meta-row">`;
+    if (item.format) html += `<span class="tag tag-format">${item.format}</span>`;
+    if (item.driver) html += `<span class="tag tag-driver">${item.driver}</span>`;
+    html += `</div>`;
+  }
+
+  // RSVP (only for sessions)
+  if (isSession) {
+    const current = rsvps[item.id] || "";
+    html += `<div class="rsvp-row">
+      <button class="rsvp-btn going ${current === 'going' ? 'selected' : ''}" onclick="event.stopPropagation(); setRsvp('${item.id}','going',this)">Attending</button>
+      <button class="rsvp-btn maybe ${current === 'maybe' ? 'selected' : ''}" onclick="event.stopPropagation(); setRsvp('${item.id}','maybe',this)">Maybe</button>
+      <button class="rsvp-btn skip ${current === 'skip' ? 'selected' : ''}" onclick="event.stopPropagation(); setRsvp('${item.id}','skip',this)">Skip</button>
+    </div>`;
+  }
+
+  // Comment toggle
+  const itemComments = comments[item.id] || [];
+  const countBadge = itemComments.length > 0 ? `<span class="comment-count">${itemComments.length}</span>` : "";
+  html += `<div class="comment-toggle" onclick="event.stopPropagation(); toggleComments('${item.id}')">
+    💬 Comments${countBadge}
+  </div>`;
+
+  // Comment section
+  html += `<div class="comments-section" id="comments-${item.id}">`;
+  html += `<div class="comment-list" id="clist-${item.id}">`;
+  itemComments.forEach((c, ci) => {
+    html += renderComment(item.id, c, ci);
+  });
+  html += `</div>`;
+  html += `<div class="comment-input-row">
+    <input class="comment-input" id="cinput-${item.id}" placeholder="Add a comment..." onkeydown="if(event.key==='Enter'){event.stopPropagation();addComment('${item.id}')}" onclick="event.stopPropagation()" />
+    <button class="comment-send" onclick="event.stopPropagation(); addComment('${item.id}')">Send</button>
+  </div>`;
+  html += `</div>`;
+
+  card.innerHTML = html;
+  return card;
+}
+
+function renderComment(itemId, c, ci) {
+  return `<div class="comment-item">
+    <span class="comment-delete" onclick="event.stopPropagation(); deleteComment('${itemId}',${ci})">&times;</span>
+    <div class="comment-author">${c.author}<span class="comment-time">${c.time}</span></div>
+    <div class="comment-text">${c.text}</div>
+  </div>`;
+}
+
+/* ====== INTERACTIONS ====== */
+function switchDay(idx) {
+  document.querySelectorAll(".day-tab").forEach(t => t.classList.toggle("active", +t.dataset.day === idx));
+  document.querySelectorAll(".day-view").forEach(v => v.classList.toggle("active", +v.dataset.day === idx));
+}
+
+function setRsvp(itemId, val, btn) {
+  // Toggle off if already selected
+  if (rsvps[itemId] === val) {
+    delete rsvps[itemId];
+  } else {
+    rsvps[itemId] = val;
+  }
+  lsSet("rsvps", rsvps);
+
+  // Update buttons in this card
+  const card = btn.closest(".card");
+  card.querySelectorAll(".rsvp-btn").forEach(b => {
+    b.classList.remove("selected");
+  });
+  if (rsvps[itemId]) {
+    card.querySelector(`.rsvp-btn.${rsvps[itemId]}`).classList.add("selected");
+  }
+}
+
+function toggleComments(itemId) {
+  const el = document.getElementById("comments-" + itemId);
+  el.classList.toggle("open");
+  if (el.classList.contains("open")) {
+    const input = document.getElementById("cinput-" + itemId);
+    setTimeout(() => input.focus(), 100);
+  }
+}
+
+function addComment(itemId) {
+  const input = document.getElementById("cinput-" + itemId);
+  const text = input.value.trim();
+  if (!text) return;
+
+  const name = userName || "Anonymous";
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  if (!comments[itemId]) comments[itemId] = [];
+  comments[itemId].push({ author: name, text, time });
+  lsSet("comments", comments);
+
+  // Re-render comment list
+  const list = document.getElementById("clist-" + itemId);
+  const ci = comments[itemId].length - 1;
+  list.insertAdjacentHTML("beforeend", renderComment(itemId, comments[itemId][ci], ci));
+
+  // Update badge
+  const card = document.getElementById("card-" + itemId);
+  const toggle = card.querySelector(".comment-toggle");
+  const count = comments[itemId].length;
+  toggle.innerHTML = `💬 Comments<span class="comment-count">${count}</span>`;
+
+  input.value = "";
+}
+
+function deleteComment(itemId, ci) {
+  if (!comments[itemId]) return;
+  comments[itemId].splice(ci, 1);
+  if (comments[itemId].length === 0) delete comments[itemId];
+  lsSet("comments", comments);
+
+  // Re-render
+  const list = document.getElementById("clist-" + itemId);
+  const arr = comments[itemId] || [];
+  list.innerHTML = arr.map((c, i) => renderComment(itemId, c, i)).join("");
+
+  const card = document.getElementById("card-" + itemId);
+  const toggle = card.querySelector(".comment-toggle");
+  const count = arr.length;
+  toggle.innerHTML = count > 0
+    ? `💬 Comments<span class="comment-count">${count}</span>`
+    : `💬 Comments`;
+}
+
+/* ====== INIT ====== */
+renderAll();
+</script>
+</body>
+</html>
